@@ -1,0 +1,34 @@
+# Optional Ingress - uncomment and configure as needed
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: teable
+#   namespace: teable
+#   labels:
+#     app.kubernetes.io/name: teable
+#     app.kubernetes.io/instance: teable
+#     app.kubernetes.io/version: "latest"
+#     app.kubernetes.io/managed-by: manual
+#   annotations:
+#     kubernetes.io/ingress.class: nginx
+#     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+#     nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+#     nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+#     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+#     nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+# spec:
+#   rules:
+#     - host: teable.local
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: teable
+#                 port:
+#                   number: 3000
+#   tls: []
+#   #  - secretName: teable-tls
+#   #    hosts:
+#   #      - teable.local

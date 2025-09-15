@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teable
+  namespace: teable
+  labels:
+    app.kubernetes.io/name: teable
+    app.kubernetes.io/instance: teable
+    app.kubernetes.io/version: "latest"
+    app.kubernetes.io/managed-by: manual
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: teable
+      app.kubernetes.io/instance: teable
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: teable
+        app.kubernetes.io/instance: teable
+    spec:
+      serviceAccountName: teable
+      securityContext: {}
+      # Add initContainers for database migration
+      initContainers:
+        - name: db-migrate
+          securityContext: {}
+          image: "ghcr.io/teableio/teable:latest"
+          imagePullPolicy: IfNotPresent
+          args:
+            - migrate-only
+          envFrom:
+            - configMapRef:
+                name: teable-config
+            - secretRef:
+                name: teable-secret
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 100m
+              memory: 102Mi
+      containers:
+        - name: teable
+          securityContext: {}
+          image: "ghcr.io/teableio/teable:latest"
+          imagePullPolicy: IfNotPresent
+          args:
+            - skip-migrate
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: teable-config
+            - secretRef:
+                name: teable-secret
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 4096Mi
+            requests:
+              cpu: 200m
+              memory: 400Mi
