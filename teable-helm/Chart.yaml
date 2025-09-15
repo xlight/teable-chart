@@ -1,0 +1,30 @@
+apiVersion: v2
+name: teable
+description: A Helm chart for Teable - A modern collaborative database platform
+type: application
+version: 0.1.0
+appVersion: "latest"
+home: https://github.com/teableio/teable
+sources:
+  - https://github.com/teableio/teable
+maintainers:
+  - name: Teable Team
+    email: contact@teable.io
+keywords:
+  - database
+  - collaboration
+  - productivity
+  - low-code
+dependencies:
+  - name: postgresql
+    version: "12.12.10"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgres.enabled
+  - name: redis
+    version: "18.19.4"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+  - name: minio
+    version: "12.8.22"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: minio.enabled

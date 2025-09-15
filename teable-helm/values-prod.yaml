@@ -1,0 +1,243 @@
+# Production values for teable.
+# This is a YAML-formatted file.
+# Override default values for production deployment.
+
+# Increase replica count for production
+replicaCount: 3
+
+image:
+  repository: ghcr.io/teableio/teable
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+# Production service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Production pod annotations for monitoring
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3000"
+  prometheus.io/path: "/metrics"
+
+# Security context for production
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# LoadBalancer for production
+service:
+  type: LoadBalancer
+  port: 80
+
+# Enable ingress for production
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: teable.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: teable-tls
+      hosts:
+        - teable.yourdomain.com
+
+# Production resource limits
+resources:
+  limits:
+    cpu: 4000m
+    memory: 8192Mi
+  requests:
+    cpu: 1000m
+    memory: 2048Mi
+
+initContainer:
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# Enable autoscaling for production
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector for production nodes
+nodeSelector:
+  node-type: "production"
+
+# Tolerations for production workloads
+tolerations:
+  - key: "production"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+# Anti-affinity for high availability
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - teable
+        topologyKey: kubernetes.io/hostname
+
+# Production Teable configuration
+teable:
+  # Production domain
+  publicOrigin: "https://teable.yourdomain.com"
+
+  # IMPORTANT: Change these secrets in production!
+  jwtSecret: "CHANGE-ME-IN-PRODUCTION-JWT-SECRET-64-CHARS-LONG-RANDOM-STRING"
+  sessionSecret: "CHANGE-ME-IN-PRODUCTION-SESSION-SECRET-64-CHARS-LONG-RANDOM"
+
+  # Production environment variables
+  env:
+    NEXT_ENV_IMAGES_ALL_REMOTE: "true"
+    PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
+    # Remove this in production with proper SSL certificates
+    NODE_TLS_REJECT_UNAUTHORIZED: "1"
+    # Additional production settings
+    NODE_ENV: "production"
+    LOG_LEVEL: "info"
+
+# Production storage configuration
+storage:
+  provider: "minio"
+  publicBucket: "teable-pub"
+  privateBucket: "teable-pvt"
+
+  # Production MinIO configuration
+  minio:
+    endpoint: "minio.yourdomain.com"
+    internalEndpoint: "teable-minio"
+    port: "443"
+    internalPort: "9000"
+    useSSL: "true"
+    # IMPORTANT: Change these credentials in production!
+    accessKey: "CHANGE-ME-PRODUCTION-ACCESS-KEY"
+    secretKey: "CHANGE-ME-PRODUCTION-SECRET-KEY"
+
+  # Production storage prefix
+  prefix: "https://minio.yourdomain.com"
+
+# Cache configuration
+cache:
+  provider: "redis"
+
+# Database configuration - will be overridden by external database
+database:
+  url: "postgresql://teable:CHANGE-ME-DB-PASSWORD@external-postgres.yourdomain.com:5432/teable"
+
+# Disable internal PostgreSQL for production (use external managed database)
+postgres:
+  enabled: false
+
+# Disable internal Redis for production (use external managed Redis)
+redis:
+  enabled: false
+
+# Production MinIO configuration
+minio:
+  enabled: true
+  auth:
+    rootUser: "CHANGE-ME-PRODUCTION-ACCESS-KEY"
+    rootPassword: "CHANGE-ME-PRODUCTION-SECRET-KEY"
+  defaultBuckets: "teable-pub:public,teable-pvt:none"
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 100Gi
+  service:
+    type: LoadBalancer
+    ports:
+      api: 9000
+      console: 9001
+  # MinIO ingress for console access
+  ingress:
+    enabled: true
+    ingressClassName: "nginx"
+    hostname: "minio-console.yourdomain.com"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    tls: true
+  # MinIO API ingress
+  apiIngress:
+    enabled: true
+    ingressClassName: "nginx"
+    hostname: "minio.yourdomain.com"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "1024m"
+    tls: true
+  # Resource limits for MinIO
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4096Mi
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+
+# Production health checks
+healthCheck:
+  enabled: true
+  path: "/health"
+
+  startupProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 60
+    successThreshold: 1
+
+  livenessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+
+  readinessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1

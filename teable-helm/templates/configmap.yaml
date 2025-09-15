@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "teable.fullname" . }}-config
+  labels:
+    {{- include "teable.labels" . | nindent 4 }}
+data:
+  # Application base configuration, public access domain
+  PUBLIC_ORIGIN: {{ .Values.teable.publicOrigin | quote }}
+
+  # Storage configuration
+  BACKEND_STORAGE_PROVIDER: {{ .Values.storage.provider | quote }}
+  # Public endpoint, important! Must be accessible by end users
+  BACKEND_STORAGE_MINIO_ENDPOINT: {{ .Values.storage.minio.endpoint | quote }}
+  # Same as above but with protocol
+  STORAGE_PREFIX: {{ .Values.storage.prefix | quote }}
+  # Internal endpoint
+  BACKEND_STORAGE_MINIO_INTERNAL_ENDPOINT: {{ include "teable.minioInternalEndpoint" . | quote }}
+  # Public port, typically 443 or 9000
+  BACKEND_STORAGE_MINIO_PORT: {{ .Values.storage.minio.port | quote }}
+  # Internal port, typically 80 or 9000
+  BACKEND_STORAGE_MINIO_INTERNAL_PORT: {{ include "teable.minioInternalPort" . | quote }}
+  # Enable HTTPS, note: if Teable uses HTTPS, MinIO must also use HTTPS to avoid CORS issues
+  BACKEND_STORAGE_MINIO_USE_SSL: {{ .Values.storage.minio.useSSL | quote }}
+
+  # Cache configuration, fixed value
+  BACKEND_CACHE_PROVIDER: {{ .Values.cache.provider | quote }}
+
+  # Other configurations, fixed values
+  {{- range $key, $value := .Values.teable.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
