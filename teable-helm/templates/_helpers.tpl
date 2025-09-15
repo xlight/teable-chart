@@ -68,7 +68,7 @@ Generate database URL
 {{- if .Values.postgres.enabled }}
 {{- printf "postgresql://postgres:%s@%s-postgresql:5432/%s" .Values.postgres.auth.postgresPassword .Release.Name .Values.postgres.auth.database }}
 {{- else }}
-{{- .Values.database.url }}
+{{- .Values.database.url | default "postgresql://postgres:password@localhost:5432/teable" }}
 {{- end }}
 {{- end }}
 
@@ -94,7 +94,7 @@ Generate MinIO internal endpoint
 {{- if .Values.minio.enabled }}
 {{- printf "%s-minio" .Release.Name }}
 {{- else }}
-{{- .Values.storage.minio.internalEndpoint }}
+{{- .Values.storage.minio.internalEndpoint | default "minio.default.svc.cluster.local" }}
 {{- end }}
 {{- end }}
 
@@ -105,7 +105,7 @@ Generate MinIO access key
 {{- if .Values.minio.enabled }}
 {{- .Values.minio.auth.rootUser }}
 {{- else }}
-{{- .Values.storage.minio.accessKey }}
+{{- .Values.storage.minio.accessKey | default "minioadmin" }}
 {{- end }}
 {{- end }}
 
@@ -116,7 +116,7 @@ Generate MinIO secret key
 {{- if .Values.minio.enabled }}
 {{- .Values.minio.auth.rootPassword }}
 {{- else }}
-{{- .Values.storage.minio.secretKey }}
+{{- .Values.storage.minio.secretKey | default "minioadmin" }}
 {{- end }}
 {{- end }}
 
@@ -127,6 +127,6 @@ Generate MinIO internal port
 {{- if .Values.minio.enabled }}
 {{- .Values.minio.service.ports.api | toString }}
 {{- else }}
-{{- .Values.storage.minio.internalPort }}
+{{- .Values.storage.minio.internalPort | default "9000" }}
 {{- end }}
 {{- end }}

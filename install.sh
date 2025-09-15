@@ -18,7 +18,7 @@ RELEASE_NAME="teable"
 VALUES_FILE=""
 CHART_PATH="./teable-helm"
 ENVIRONMENT="development"
-SKIP_DEPENDENCIES=false
+SKIP_DEPENDENCIES=true
 DRY_RUN=false
 
 # Function to print colored output
@@ -51,7 +51,8 @@ Options:
     -f, --values VALUES_FILE       Values file to use
     -e, --environment ENV          Environment type: development, staging, production (default: development)
     -c, --chart-path PATH          Path to Helm chart (default: ./teable-helm)
-    --skip-dependencies            Skip Helm dependency update
+    --skip-dependencies            Skip Helm dependency update (default: true)
+    --with-dependencies            Enable Helm dependency update
     --dry-run                      Perform a dry run
     -h, --help                     Show this help message
 
@@ -121,10 +122,18 @@ create_namespace() {
 update_dependencies() {
     if [ "$SKIP_DEPENDENCIES" = false ]; then
         print_status "Updating Helm dependencies..."
-        helm dependency update "$CHART_PATH"
-        print_success "Dependencies updated"
+        if helm dependency update "$CHART_PATH"; then
+            print_success "Dependencies updated"
+        else
+            print_error "Failed to update dependencies"
+            print_warning "You may need to add Bitnami repository:"
+            print_warning "helm repo add bitnami https://charts.bitnami.com/bitnami"
+            print_warning "helm repo update"
+            print_warning "Or use --skip-dependencies to install without dependencies"
+            exit 1
+        fi
     else
-        print_warning "Skipping dependency update"
+        print_warning "Skipping dependency update (using external services)"
     fi
 }
 
@@ -303,6 +312,10 @@ while [[ $# -gt 0 ]]; do
             SKIP_DEPENDENCIES=true
             shift
             ;;
+        --with-dependencies)
+            SKIP_DEPENDENCIES=false
+            shift
+            ;;
         --dry-run)
             DRY_RUN=true
             shift
@@ -354,7 +367,14 @@ main() {
         create_namespace
     fi
 
-    update_dependencies
+    # Only update dependencies if not skipping
+    if [ "$SKIP_DEPENDENCIES" = false ]; then
+        update_dependencies
+    else
+        print_warning "Dependencies are disabled. Make sure you have external PostgreSQL, Redis, and MinIO configured."
+        print_status "Using standalone configuration..."
+    fi
+
     install_teable
 }
 

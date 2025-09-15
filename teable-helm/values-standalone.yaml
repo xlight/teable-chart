@@ -1,6 +1,5 @@
-# Default values for teable.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Standalone values for teable - for testing without external dependencies
+# This configuration assumes you have external PostgreSQL, Redis, and MinIO available
 
 replicaCount: 1
 
@@ -14,12 +13,8 @@ nameOverride: ""
 fullnameOverride: ""
 
 serviceAccount:
-  # Specifies whether a service account should be created
   create: true
-  # Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
   name: ""
 
 podAnnotations: {}
@@ -43,26 +38,17 @@ ingress:
   enabled: false
   className: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # nginx.ingress.kubernetes.io/proxy-body-size: "100m"
-    # nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
-    # nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    # nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    # nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
   hosts:
     - host: teable.local
       paths:
         - path: /
           pathType: Prefix
   tls: []
-  #  - secretName: teable-tls
-  #    hosts:
-  #      - teable.local
 
 resources:
   limits:
-    cpu: 2000m
-    memory: 4096Mi
+    cpu: 1000m
+    memory: 2048Mi
   requests:
     cpu: 200m
     memory: 400Mi
@@ -70,8 +56,8 @@ resources:
 initContainer:
   resources:
     limits:
-      cpu: 1000m
-      memory: 1024Mi
+      cpu: 500m
+      memory: 512Mi
     requests:
       cpu: 100m
       memory: 102Mi
@@ -81,7 +67,6 @@ autoscaling:
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
 
 nodeSelector: {}
 
@@ -92,11 +77,11 @@ affinity: {}
 # Teable specific configuration
 teable:
   # Application base configuration
-  publicOrigin: "https://teable.local"
+  publicOrigin: "http://teable.local"
 
-  # JWT and session secrets
-  jwtSecret: "your-jwt-secret-please-change-this"
-  sessionSecret: "your-session-secret-please-change-this"
+  # JWT and session secrets - CHANGE THESE IN PRODUCTION
+  jwtSecret: "standalone-jwt-secret-for-testing-only-change-in-production"
+  sessionSecret: "standalone-session-secret-for-testing-only-change-in-production"
 
   # Additional environment variables
   env:
@@ -104,67 +89,44 @@ teable:
     PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: "1"
     NODE_TLS_REJECT_UNAUTHORIZED: "0"
 
-# Storage configuration
+# Storage configuration - Configure these for your external MinIO
 storage:
   provider: "minio"
   publicBucket: "teable-pub"
   privateBucket: "teable-pvt"
 
-  # MinIO configuration
+  # MinIO configuration - UPDATE THESE VALUES
   minio:
     endpoint: "minio.example.com"
-    internalEndpoint: "teable-minio"
-    port: "443"
+    internalEndpoint: "minio.default.svc.cluster.local"
+    port: "9000"
     internalPort: "9000"
-    useSSL: "true"
+    useSSL: "false"
     accessKey: "minioadmin"
     secretKey: "minioadmin"
 
-  # Storage prefix (same as endpoint but with protocol)
-  prefix: "https://minio.example.com"
+  # Storage prefix
+  prefix: "http://minio.example.com:9000"
 
 # Cache configuration
 cache:
   provider: "redis"
+  # Redis URI - UPDATE THIS VALUE
+  redisUri: "redis://localhost:6379/0"
 
-# Database configuration
+# Database configuration - UPDATE THIS VALUE
 database:
-  url: "postgresql://postgres:password@teable-postgresql:5432/teable"
+  url: "postgresql://postgres:password@localhost:5432/teable"
 
-# External service dependencies
+# Disable all internal services
 postgres:
   enabled: false
-  auth:
-    postgresPassword: "password"
-    database: "teable"
-  primary:
-    persistence:
-      enabled: true
-      size: 8Gi
 
 redis:
   enabled: false
-  auth:
-    enabled: false
-  master:
-    persistence:
-      enabled: true
-      size: 8Gi
 
 minio:
   enabled: false
-  auth:
-    rootUser: "minioadmin"
-    rootPassword: "minioadmin"
-  defaultBuckets: "teable-pub:public,teable-pvt:none"
-  persistence:
-    enabled: true
-    size: 20Gi
-  service:
-    type: ClusterIP
-    ports:
-      api: 9000
-      console: 9001
 
 # Health checks configuration
 healthCheck:

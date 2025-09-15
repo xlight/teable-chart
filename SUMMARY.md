@@ -78,15 +78,24 @@ teable_install/
 ## Quick Start Commands
 
 ```bash
-# Development installation (5 minutes)
+# Test templates first
+./test-templates.sh
+
+# Start external dependencies
+docker-compose up -d
+
+# Development installation
 ./install.sh
+
+# Check installation status  
+./check-status.sh
 
 # Production installation
 ./install.sh -e production -f my-values.yaml
 
 # Using Makefile
 make install          # Development
-make prod            # Production
+make prod            # Production  
 make status          # Check status
 make logs            # View logs
 make port-forward    # Access via localhost:8080
@@ -101,26 +110,39 @@ teable:
   jwtSecret: "64-char-secure-secret"
   sessionSecret: "64-char-secure-secret"
 
-storage:
-  minio:
-    endpoint: "minio.your-domain.com"
-    accessKey: "secure-access-key"
-    secretKey: "secure-secret-key"
-```
-
-### External Services Integration
-```yaml
-# Use external PostgreSQL
-postgres:
-  enabled: false
+# External database (required)
 database:
   url: "postgresql://user:pass@external-db:5432/teable"
 
-# Use external Redis
-redis:
-  enabled: false
+# External Redis (required)  
 cache:
   redisUri: "redis://external-redis:6379/0"
+
+# External MinIO (required)
+storage:
+  minio:
+    endpoint: "minio.your-domain.com"
+    internalEndpoint: "minio-internal.svc.cluster.local"
+    accessKey: "secure-access-key"
+    secretKey: "secure-secret-key"
+  prefix: "https://minio.your-domain.com"
+```
+
+### Development with Docker Compose
+```yaml
+# For local development
+database:
+  url: "postgresql://postgres:password@host.docker.internal:5432/teable"
+
+cache:
+  redisUri: "redis://host.docker.internal:6379/0"
+
+storage:
+  minio:
+    endpoint: "localhost:9000"
+    internalEndpoint: "host.docker.internal"
+    useSSL: "false"
+  prefix: "http://localhost:9000"
 ```
 
 ## Security Features

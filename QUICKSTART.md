@@ -22,41 +22,60 @@ cd teable_install
 chmod +x install.sh
 ```
 
-### 2. Development Installation (All-in-One)
+### 2. Test Template Generation (Recommended First Step)
 
-For testing and development with all services included:
+Before installing, test that templates generate correctly:
 
 ```bash
-# Install with default settings
+# Test template generation
+./test-templates.sh
+
+# This validates templates without requiring external services
+```
+
+### 3. Development Installation (Standalone Mode)
+
+The current chart is configured for standalone mode (external services):
+
+```bash
+# Install with default settings (external services required)
 ./install.sh
 
 # Or manually with Helm
 helm install teable ./teable-helm --create-namespace --namespace teable
 ```
 
-This installs:
-- Teable application
-- PostgreSQL database
-- Redis cache
-- MinIO object storage
-- All in the `teable` namespace
+**Note**: This installs only the Teable application. External PostgreSQL, Redis, and MinIO are required.
 
-### 3. Access Your Installation
+### 4. Set Up External Dependencies (Required)
 
-After installation, get the access URL:
+Since the chart uses external services, set them up first:
 
 ```bash
-# If using ingress (update /etc/hosts to point teable.local to your cluster IP)
-echo "127.0.0.1 teable.local" | sudo tee -a /etc/hosts
+# Start dependencies with Docker Compose
+docker-compose up -d
 
-# Or use port-forward
+# Wait for services to be ready
+docker-compose ps
+
+# Access MinIO console to verify buckets
+open http://localhost:9001
+# Login: minioadmin / minioadmin
+```
+
+### 5. Access Your Installation
+
+After dependencies are running:
+
+```bash
+# Use port-forward to access Teable
 kubectl port-forward svc/teable 8080:3000 -n teable
 # Then visit: http://localhost:8080
 ```
 
-### 4. Production Installation
+### 6. Production Installation
 
-For production deployment:
+For production with external managed services:
 
 ```bash
 # Create custom values file
@@ -66,9 +85,9 @@ cp teable-helm/values-prod.yaml my-production-values.yaml
 # - teable.publicOrigin: "https://your-domain.com"
 # - teable.jwtSecret: "your-secure-64-char-jwt-secret"
 # - teable.sessionSecret: "your-secure-64-char-session-secret"
-# - storage.minio.endpoint: "minio.your-domain.com"
-# - storage.minio.accessKey: "your-minio-access-key"
-# - storage.minio.secretKey: "your-minio-secret-key"
+# - database.url: "postgresql://user:pass@your-db:5432/teable"
+# - cache.redisUri: "redis://your-redis:6379/0"
+# - storage.minio endpoints and credentials
 
 # Install with production settings
 ./install.sh -e production -f my-production-values.yaml -n teable-prod -r teable-prod
@@ -76,46 +95,43 @@ cp teable-helm/values-prod.yaml my-production-values.yaml
 
 ## Common Configurations
 
-### Enable Ingress
+### Configure External Services
+
+The chart is preconfigured for external services. Update these in your values file:
 
 ```yaml
-# Add to your values file
+# Database configuration
+database:
+  url: "postgresql://postgres:password@host.docker.internal:5432/teable"
+
+# Redis configuration  
+cache:
+  redisUri: "redis://host.docker.internal:6379/0"
+
+# MinIO configuration
+storage:
+  minio:
+    endpoint: "localhost:9000"
+    internalEndpoint: "host.docker.internal"
+    port: "9000"
+    internalPort: "9000"
+    useSSL: "false"
+    accessKey: "minioadmin"
+    secretKey: "minioadmin"
+  prefix: "http://localhost:9000"
+```
+
+### Enable Ingress (Optional)
+
+```yaml
 ingress:
   enabled: true
   className: "nginx"
   hosts:
-    - host: teable.yourdomain.com
+    - host: teable.local
       paths:
         - path: /
           pathType: Prefix
-  tls:
-    - secretName: teable-tls
-      hosts:
-        - teable.yourdomain.com
-```
-
-### Use External Database
-
-```yaml
-# Disable internal PostgreSQL
-postgres:
-  enabled: false
-
-# Configure external database
-database:
-  url: "postgresql://user:password@external-db:5432/teable"
-```
-
-### Use External Redis
-
-```yaml
-# Disable internal Redis
-redis:
-  enabled: false
-
-# Configure external Redis (add to secret or values)
-cache:
-  redisUri: "redis://external-redis:6379/0"
 ```
 
 ## Verification
@@ -208,21 +224,31 @@ kubectl delete namespace teable
 ## Example Complete Workflow
 
 ```bash
-# 1. Install for development
+# 1. Test templates first
+./test-templates.sh
+
+# 2. Start external dependencies
+docker-compose up -d
+
+# 3. Wait for services to be ready
+sleep 30
+
+# 4. Install Teable
 ./install.sh
 
-# 2. Wait for pods to be ready
+# 5. Wait for pods to be ready (may take time due to external service connections)
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=teable -n teable --timeout=300s
 
-# 3. Access the application
+# 6. Access the application
 kubectl port-forward svc/teable 8080:3000 -n teable &
 
-# 4. Open browser to http://localhost:8080
+# 7. Open browser to http://localhost:8080
 echo "Teable is ready at http://localhost:8080"
 
-# 5. When done, cleanup
+# 8. When done, cleanup
 helm uninstall teable -n teable
 kubectl delete namespace teable
+docker-compose down -v
 ```
 
 That's it! You now have Teable running on Kubernetes. 🎉
