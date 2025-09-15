@@ -6,7 +6,7 @@ This directory contains static Kubernetes manifests for deploying Teable.
 
 - **Namespace**: teable
 - **Release Name**: teable
-- **Public Origin**: http://localhost:8080
+- **Public Origin**: http://teable.local
 - **Database**: External PostgreSQL
 - **Cache**: External Redis
 - **Storage**: External MinIO

@@ -15,7 +15,8 @@ NC='\033[0m' # No Color
 # Default values
 NAMESPACE="teable"
 RELEASE_NAME="teable"
-CHART_PATH="./teable-helm"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CHART_PATH="${SCRIPT_DIR}/teable-helm"
 
 # Function to print colored output
 print_status() {
@@ -96,6 +97,7 @@ main() {
     echo "Namespace: $NAMESPACE"
     echo "Release: $RELEASE_NAME"
     echo "Chart Path: $CHART_PATH"
+    echo "Script Directory: $SCRIPT_DIR"
     echo ""
 
     # Check prerequisites
@@ -119,11 +121,15 @@ main() {
 
     if [ ! -d "$CHART_PATH" ]; then
         print_error "Chart directory not found: $CHART_PATH"
+        print_status "Current working directory: $(pwd)"
+        print_status "Script directory: $SCRIPT_DIR"
         exit 1
     fi
 
     if [ ! -f "$CHART_PATH/Chart.yaml" ]; then
         print_error "Chart.yaml not found in: $CHART_PATH"
+        print_status "Directory contents:"
+        ls -la "$CHART_PATH" 2>/dev/null || echo "Directory not accessible"
         exit 1
     fi
 

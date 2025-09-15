@@ -30,23 +30,39 @@ print_error() {
 }
 
 # Default values
-CHART_PATH="./teable-helm"
-OUTPUT_DIR="./test-output"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CHART_PATH="${SCRIPT_DIR}/teable-helm"
+OUTPUT_DIR="${SCRIPT_DIR}/test-output"
 NAMESPACE="teable-test"
 RELEASE_NAME="teable-test"
 
 print_status "Testing Helm templates..."
+print_status "Script directory: $SCRIPT_DIR"
+print_status "Chart path: $CHART_PATH"
 
 # Check if Helm is available
 if ! command -v helm &> /dev/null; then
     print_error "Helm is not installed or not in PATH"
     print_status "You can install Helm from: https://helm.sh/docs/intro/install/"
+    print_status "Alternative: Use './generate-k8s.sh' to create static manifests"
     exit 1
 fi
 
 # Check if chart directory exists
 if [ ! -d "$CHART_PATH" ]; then
     print_error "Chart directory not found: $CHART_PATH"
+    print_error "Expected path: $CHART_PATH"
+    print_status "Current working directory: $(pwd)"
+    print_status "Available directories:"
+    ls -la "$SCRIPT_DIR" | grep "^d"
+    exit 1
+fi
+
+# Verify Chart.yaml exists
+if [ ! -f "$CHART_PATH/Chart.yaml" ]; then
+    print_error "Chart.yaml not found in: $CHART_PATH"
+    print_status "Directory contents:"
+    ls -la "$CHART_PATH"
     exit 1
 fi
 
