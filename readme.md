@@ -310,18 +310,18 @@ spec:
 ## Deployment Steps
 
 1. Create configuration and secrets:
-
+```
     kubectl apply -f config.yaml
     kubectl apply -f secrets.yaml
-
+```
 2. Deploy application:
-
+```
     kubectl apply -f deployment.yaml
     kubectl apply -f service.yaml
     kubectl apply -f ingress.yaml
-
+```
 3. Verify deployment:
-
+```
     # Check Pod status
 
     kubectl get pods -l app=teable
@@ -329,7 +329,7 @@ spec:
     # View application logs
 
     kubectl logs -l app=teable
-
+```
 
 ###
 
@@ -364,18 +364,19 @@ Configuration Notes
 Troubleshooting
 
 1. Check Pod status:
-
+```
     kubectl describe pod -l app=teable
-
+```
 2. View application logs:
-
+```
     kubectl logs -l app=teable
-
+```
 3. Verify configuration:
-
+```
     kubectl describe configmap teable-config
     kubectl describe secret teable-secrets
-
+```
 4. Check network connection:
-
+```
     kubectl exec -it  -- curl -v localhost:3000/health
+```
