@@ -65,8 +65,8 @@ Create the name of the service account to use
 Generate database URL
 */}}
 {{- define "teable.databaseUrl" -}}
-{{- if .Values.postgres.enabled }}
-{{- printf "postgresql://postgres:%s@%s-postgresql:5432/%s" .Values.postgres.auth.postgresPassword .Release.Name .Values.postgres.auth.database }}
+{{- if .Values.postgresql.enabled }}
+{{- printf "postgresql://postgres:%s@%s-postgresql:5432/%s" .Values.postgresql.auth.postgresPassword .Release.Name .Values.postgresql.auth.database }}
 {{- else }}
 {{- .Values.database.url | default "postgresql://postgres:password@localhost:5432/teable" }}
 {{- end }}
@@ -103,7 +103,7 @@ Generate MinIO access key
 */}}
 {{- define "teable.minioAccessKey" -}}
 {{- if .Values.minio.enabled }}
-{{- .Values.minio.auth.rootUser }}
+{{- .Values.minio.rootUser }}
 {{- else }}
 {{- .Values.storage.minio.accessKey | default "minioadmin" }}
 {{- end }}
@@ -114,7 +114,7 @@ Generate MinIO secret key
 */}}
 {{- define "teable.minioSecretKey" -}}
 {{- if .Values.minio.enabled }}
-{{- .Values.minio.auth.rootPassword }}
+{{- .Values.minio.rootPassword }}
 {{- else }}
 {{- .Values.storage.minio.secretKey | default "minioadmin" }}
 {{- end }}

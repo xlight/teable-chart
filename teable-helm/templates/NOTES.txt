@@ -34,7 +34,7 @@
 
 5. MinIO Configuration:
    - MinIO Console URL: Access via port-forward or ingress
-   - Default credentials: {{ .Values.minio.auth.rootUser }} / {{ .Values.minio.auth.rootPassword }}
+   - Default credentials: {{ .Values.minio.rootUser }} / {{ .Values.minio.rootPassword }}
    - Buckets created: {{ .Values.storage.publicBucket }} (public), {{ .Values.storage.privateBucket }} (private)
 
    To access MinIO console:
@@ -45,9 +45,9 @@
 {{- if .Values.postgres.enabled }}
 
 6. PostgreSQL Configuration:
-   - Database: {{ .Values.postgres.auth.database }}
+   - Database: {{ .Values.postgresql.auth.database }}
    - Username: postgres
-   - Password: {{ .Values.postgres.auth.postgresPassword }}
+   - Password: {{ .Values.postgresql.auth.postgresPassword }}
 
    To connect to PostgreSQL:
    kubectl port-forward svc/{{ .Release.Name }}-postgresql 5432:5432 -n {{ .Release.Namespace }}
